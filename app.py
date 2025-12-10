@@ -1,57 +1,110 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
+
+# Función para realizar los cálculos y transformaciones
+def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_code, official_delivery_number, buying_station, product_name):
+    # ----- Hoja "Loading" -----
+    # Se genera un solo registro con los valores de los inputs
+    loading_data = {
+        'Loading Date*': loading_date,
+        'Origin Warehouse Name': origin_warehouse_name,
+        'Origin Warehouse Code': origin_warehouse_code,
+        'Destination Warehouse Name': 'ECUADOR DIRECT',
+        'Destination Warehouse Code*': 'DIR',
+        'Truck License Plate*': "XX",
+        'Driver': "XX",
+        'Official Delivery Number*': official_delivery_number,
+        'Project': '',
+        'Total Number Of Sacks*': (df['Total Gross Weight (kg)*'].sum() / 69).round(0),  # redondeo
+        'Total Gross Weight (kg)*': df['Total Gross Weight (kg)*'].sum(),
+        'Total Net Weight (kg)*': df['Total Net Weight (kg)*'].sum(),
+        'Product*': product_name
+    }
+    
+    loading_df = pd.DataFrame([loading_data])
+    
+    # ----- Hoja "Buying" -----
+    # Realizamos las transformaciones para la hoja Buying
+    buying_data = pd.DataFrame({
+        'Buying Date*': df['Fechas de entrega (DIA/MES/AÑO)'].apply(lambda x: x.strftime('%Y-%m-%d')),
+        'Producer Code*': df['Codigo del Productor'],
+        'Producer Name': df['Nombre del Productor'],
+        'Buying Station': buying_station,
+        'Net Weight (Kg)*': (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales'] * 45.36),
+        'Number Of Sacks*': '',  # Este campo queda vacío
+        'Receipt Number*': df['Numero de comprobante de pago'],
+        'Loading Official Delivery Number*': official_delivery_number
+    })
+    
+    return loading_df, buying_data
 
 # ----- Configuración inicial -----
 st.set_page_config(page_title="Report Kapp", layout="wide")
-
 st.title("📊 Report Kapp")
-st.write("Aplicación de carga, transformación y visualización de datos.")
+st.write("Aplicación para cargar, transformar y visualizar datos de cacao.")
 
 # ----- Panel lateral -----
 st.sidebar.header("⚙️ Configuración de entrada")
 
-# Subir archivo Excel
-uploaded_file = st.sidebar.file_uploader(
-    "Sube tu archivo Excel",
-    type=["xlsx", "xls"]
-)
+# Inputs
+uploaded_file = st.sidebar.file_uploader("Sube tu archivo Excel", type=["xlsx", "xls"])
+origin_warehouse_name = st.sidebar.text_input("Nombre del Almacén de Origen")
+origin_warehouse_code = st.sidebar.text_input("Código del Almacén de Origen")
+official_delivery_number = st.sidebar.text_input("Número Oficial de Entrega")
+buying_station = st.sidebar.text_input("Estación de Compra")
+product_name = st.sidebar.text_input("Nombre del Producto")
 
-# Código alfanumérico
-codigo = st.sidebar.text_input("Código alfanumérico")
-
-# Fecha
-fecha = st.sidebar.date_input("Fecha")
+# Fecha actual
+loading_date = datetime.today().strftime('%Y-%m-%d')
 
 st.sidebar.write("---")
 
 # ----- Lógica principal -----
 if uploaded_file:
-    # Leer archivo
+    # Leer archivo Excel
     df = pd.read_excel(uploaded_file)
 
-    st.subheader("📥 Archivo original")
-    st.dataframe(df, use_container_width=True)
+    # Validar que las columnas necesarias estén presentes
+    required_columns = [
+        'Nombre del Productor', 'Codigo del Productor', 
+        'Cantidad de cacao en BABA en quintales', 'Cantidad de cacao SECO entregado en quintales', 
+        'Fechas de entrega (DIA/MES/AÑO)', 'Numero de comprobante de pago'
+    ]
 
-    # ----- Ejemplo de transformación -----
-    # (Luego podemos personalizarla con tus reglas reales)
-    df_transformada = df.copy()
-    df_transformada["codigo_ingresado"] = codigo
-    df_transformada["fecha_ingresada"] = fecha
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        st.error(f"Faltan las siguientes columnas: {', '.join(missing_columns)}")
+    else:
+        # Crear las columnas adicionales necesarias
+        df['Total Gross Weight (kg)*'] = (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales']) * 45.36
+        df['Total Net Weight (kg)*'] = df['Total Gross Weight (kg)*']  # Se asume que el peso neto es igual por ahora
+        
+        # Llamar la función de transformación
+        loading_df, buying_df = transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_code, official_delivery_number, buying_station, product_name)
 
-    # Ejemplo: agregar un índice o transformar columnas
-    df_transformada["row_id"] = range(1, len(df) + 1)
+        # Mostrar las tablas generadas
+        st.subheader("🔄 Datos transformados")
 
-    st.subheader("🔄 Datos transformados")
-    st.dataframe(df_transformada, use_container_width=True)
+        # Mostrar las dos hojas
+        st.write("### Hoja 'Loading'")
+        st.dataframe(loading_df, use_container_width=True)
 
-    # Descargar archivo transformado
-    output_excel = df_transformada.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="⬇️ Descargar archivo transformado (CSV)",
-        data=output_excel,
-        file_name="reporte_transformado.csv",
-        mime="text/csv"
-    )
+        st.write("### Hoja 'Buying'")
+        st.dataframe(buying_df, use_container_width=True)
+
+        # Generar archivo Excel con ambas hojas
+        with pd.ExcelWriter("Reporte_Transformado.xlsx") as writer:
+            loading_df.to_excel(writer, sheet_name="Loading", index=False)
+            buying_df.to_excel(writer, sheet_name="Buying", index=False)
+
+        # Descargar archivo Excel
+        st.download_button(
+            label="⬇️ Descargar archivo transformado (Excel)",
+            data=open("Reporte_Transformado.xlsx", "rb").read(),
+            file_name="Reporte_Transformado.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
 else:
     st.info("📁 Sube un archivo Excel desde el panel lateral para comenzar.")
