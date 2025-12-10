@@ -34,14 +34,15 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
     
     # ----- Hoja "Buying" -----
     # Cálculo de la columna 'Net Weight (Kg)*' en la hoja Buying
+    df['Net Weight (Kg)*'] = (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales'] * 45.36)
+    
+    # Aquí solo redondeamos para la visualización (sin alterar el valor real para cálculos posteriores)
     buying_data = pd.DataFrame({
         'Buying Date*': df['Fechas de entrega (DIA/MES/AÑO)'].apply(lambda x: x.strftime('%Y-%m-%d')),
         'Producer Code*': df['Codigo del Productor'],
         'Producer Name': df['Nombre del Productor'],
         'Buying Station': buying_station,
-        'Net Weight (Kg)*': (
-            (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales'] * 45.36)
-        ).round(0),  # redondeo
+        'Net Weight (Kg)*': df['Net Weight (Kg)*'].round(0),  # Redondeo para la visualización
         'Number Of Sacks*': '',  # Este campo queda vacío
         'Receipt Number*': df['Numero de comprobante de pago'],
         'Loading Official Delivery Number*': official_delivery_number
