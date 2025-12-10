@@ -16,11 +16,11 @@ def check_login(username, password):
 
 # Function to display login form
 def show_login():
-    st.title("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    st.title("Welcome to Report Kapp")
+    username = st.text_input("Username", key="login_username")
+    password = st.text_input("Password", type="password", key="login_password")
     
-    if st.button("Login"):
+    if st.button("Login", key="login_button"):
         if check_login(username, password):
             st.session_state.logged_in = True
             st.success("Login Successful!")
@@ -88,25 +88,53 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
     return loading_df, buying_data
 
 # --------- Configuration and Inputs ---------
-st.set_page_config(page_title="Report Kapp", layout="wide")
+st.set_page_config(page_title="Report Kapp", layout="wide", initial_sidebar_state="collapsed")
+st.markdown("""
+    <style>
+    .reportview-container {
+        background: #F7F7F7;
+    }
+    .sidebar .sidebar-content {
+        background: #FFFFFF;
+        padding-top: 50px;
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+    .stButton>button:hover {
+        background-color: #45a049;
+    }
+    .stTextInput input {
+        font-size: 16px;
+    }
+    .stTextInput label {
+        font-size: 14px;
+        color: #333333;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Title and description
 st.title("📊 Report Kapp")
-st.write("Application for uploading, transforming, and visualizing cacao data.")
+st.write("An application to upload, transform, and visualize cacao data in a professional and clean layout.")
 
 # --------- Sidebar ---------
-st.sidebar.header("⚙️ Input Configuration")
+st.sidebar.header("⚙️ Configuration")
 
 # Inputs
-uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx", "xls"])
-origin_warehouse_name = st.sidebar.text_input("Origin Warehouse Name")
-origin_warehouse_code = st.sidebar.text_input("Origin Warehouse Code")
-official_delivery_number = st.sidebar.text_input("Official Delivery Number")
-buying_station = st.sidebar.text_input("Buying Station")
-product_name = st.sidebar.text_input("Product Name")
+uploaded_file = st.sidebar.file_uploader("Upload your Excel file", type=["xlsx", "xls"], label_visibility="collapsed")
+origin_warehouse_name = st.sidebar.text_input("Origin Warehouse Name", label_visibility="collapsed")
+origin_warehouse_code = st.sidebar.text_input("Origin Warehouse Code", label_visibility="collapsed")
+official_delivery_number = st.sidebar.text_input("Official Delivery Number", label_visibility="collapsed")
+buying_station = st.sidebar.text_input("Buying Station", label_visibility="collapsed")
+product_name = st.sidebar.text_input("Product Name", label_visibility="collapsed")
 
 # Current date
 loading_date = datetime.today().strftime('%Y-%m-%d')
-
-st.sidebar.write("---")
 
 # --------- Main Logic ---------
 if uploaded_file:
