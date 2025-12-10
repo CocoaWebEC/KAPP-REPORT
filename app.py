@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import pytz
 
 # --------- Login Section ---------
 def check_login(username, password):
@@ -95,6 +96,10 @@ product_name = st.sidebar.text_input("Product Name")
 
 loading_date = datetime.today().strftime('%Y-%m-%d')
 
+# Get the current time in Ecuador (GMT-5)
+ecuador_tz = pytz.timezone('America/Guayaquil')
+ecuador_time = datetime.now(ecuador_tz).strftime('%Y-%m-%d_%H-%M-%S')
+
 # Main application logic
 if uploaded_file:
     # Read the uploaded Excel file
@@ -122,16 +127,18 @@ if uploaded_file:
         st.write("### 'Buying' Sheet")
         st.dataframe(buying_df, use_container_width=True)
 
-        # Generate the Excel file
-        with pd.ExcelWriter("Transformed_Report.xlsx") as writer:
+        # Generate the Excel file with custom name
+        file_name = f"MultiLoad_KATCHILE_{origin_warehouse_code}_{ecuador_time}.xlsx"
+        
+        with pd.ExcelWriter(file_name) as writer:
             loading_df.to_excel(writer, sheet_name="Loading", index=False)
             buying_df.to_excel(writer, sheet_name="Buying", index=False)
 
         # Download button
         st.download_button(
             label="⬇️ Download Transformed File (Excel)",
-            data=open("Transformed_Report.xlsx", "rb").read(),
-            file_name="Transformed_Report.xlsx",
+            data=open(file_name, "rb").read(),
+            file_name=file_name,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
