@@ -4,8 +4,16 @@ from datetime import datetime
 
 # Función para realizar los cálculos y transformaciones
 def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_code, official_delivery_number, buying_station, product_name):
+    # Convertir a numérico y reemplazar NaN con 0
+    df['Cantidad de cacao en BABA en quintales'] = pd.to_numeric(df['Cantidad de cacao en BABA en quintales'], errors='coerce').fillna(0)
+    df['Cantidad de cacao SECO entregado en quintales'] = pd.to_numeric(df['Cantidad de cacao SECO entregado en quintales'], errors='coerce').fillna(0)
+    
     # ----- Hoja "Loading" -----
-    # Se genera un solo registro con los valores de los inputs
+    # Cálculos para 'Total Gross Weight (kg)*' y 'Total Net Weight (kg)*'
+    df['Total Gross Weight (kg)*'] = (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales']) * 45.36
+    df['Total Net Weight (kg)*'] = df['Total Gross Weight (kg)*']  # Se asume que el peso neto es igual por ahora
+
+    # Generar datos de la hoja Loading
     loading_data = {
         'Loading Date*': loading_date,
         'Origin Warehouse Name': origin_warehouse_name,
@@ -25,10 +33,7 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
     loading_df = pd.DataFrame([loading_data])
     
     # ----- Hoja "Buying" -----
-    # Realizamos las transformaciones para la hoja Buying
-    df['Cantidad de cacao en BABA en quintales'] = df['Cantidad de cacao en BABA en quintales'].fillna(0)
-    df['Cantidad de cacao SECO entregado en quintales'] = df['Cantidad de cacao SECO entregado en quintales'].fillna(0)
-    
+    # Cálculo de la columna 'Net Weight (Kg)*' en la hoja Buying
     buying_data = pd.DataFrame({
         'Buying Date*': df['Fechas de entrega (DIA/MES/AÑO)'].apply(lambda x: x.strftime('%Y-%m-%d')),
         'Producer Code*': df['Codigo del Productor'],
@@ -81,10 +86,6 @@ if uploaded_file:
     if missing_columns:
         st.error(f"Faltan las siguientes columnas: {', '.join(missing_columns)}")
     else:
-        # Crear las columnas adicionales necesarias
-        df['Total Gross Weight (kg)*'] = (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales']) * 45.36
-        df['Total Net Weight (kg)*'] = df['Total Gross Weight (kg)*']  # Se asume que el peso neto es igual por ahora
-        
         # Llamar la función de transformación
         loading_df, buying_df = transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_code, official_delivery_number, buying_station, product_name)
 
