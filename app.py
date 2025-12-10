@@ -25,8 +25,8 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
         'Official Delivery Number*': official_delivery_number,
         'Project': '',
         'Total Number Of Sacks*': (df['Total Gross Weight (kg)*'].sum() / 69).round(0),  # redondeo
-        'Total Gross Weight (kg)*': df['Total Gross Weight (kg)*'].sum().round(0),  # redondeo
-        'Total Net Weight (kg)*': df['Total Net Weight (kg)*'].sum().round(0),  # redondeo
+        'Total Gross Weight (kg)*': df['Total Gross Weight (kg)*'].sum(),  # redondeo
+        'Total Net Weight (kg)*': df['Total Net Weight (kg)*'].sum(),  # redondeo
         'Product*': product_name
     }
     
@@ -42,7 +42,7 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
         'Producer Code*': df['Codigo del Productor'],
         'Producer Name': df['Nombre del Productor'],
         'Buying Station': buying_station,
-        'Net Weight (Kg)*': df['Net Weight (Kg)*'].round(0),  # Redondeo para la visualización
+        'Net Weight (Kg)*': df['Net Weight (Kg)*'],  # Redondeo para la visualización
         'Number Of Sacks*': '',  # Este campo queda vacío
         'Receipt Number*': df['Numero de comprobante de pago'],
         'Loading Official Delivery Number*': official_delivery_number
@@ -115,3 +115,4 @@ if uploaded_file:
 
 else:
     st.info("📁 Sube un archivo Excel desde el panel lateral para comenzar.")
+
