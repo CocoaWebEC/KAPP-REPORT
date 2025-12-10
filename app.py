@@ -17,8 +17,8 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
         'Official Delivery Number*': official_delivery_number,
         'Project': '',
         'Total Number Of Sacks*': (df['Total Gross Weight (kg)*'].sum() / 69).round(0),  # redondeo
-        'Total Gross Weight (kg)*': df['Total Gross Weight (kg)*'].sum(),
-        'Total Net Weight (kg)*': df['Total Net Weight (kg)*'].sum(),
+        'Total Gross Weight (kg)*': df['Total Gross Weight (kg)*'].sum().round(0),  # redondeo
+        'Total Net Weight (kg)*': df['Total Net Weight (kg)*'].sum().round(0),  # redondeo
         'Product*': product_name
     }
     
@@ -26,12 +26,17 @@ def transform_data(df, loading_date, origin_warehouse_name, origin_warehouse_cod
     
     # ----- Hoja "Buying" -----
     # Realizamos las transformaciones para la hoja Buying
+    df['Cantidad de cacao en BABA en quintales'] = df['Cantidad de cacao en BABA en quintales'].fillna(0)
+    df['Cantidad de cacao SECO entregado en quintales'] = df['Cantidad de cacao SECO entregado en quintales'].fillna(0)
+    
     buying_data = pd.DataFrame({
         'Buying Date*': df['Fechas de entrega (DIA/MES/AÑO)'].apply(lambda x: x.strftime('%Y-%m-%d')),
         'Producer Code*': df['Codigo del Productor'],
         'Producer Name': df['Nombre del Productor'],
         'Buying Station': buying_station,
-        'Net Weight (Kg)*': (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales'] * 45.36),
+        'Net Weight (Kg)*': (
+            (df['Cantidad de cacao en BABA en quintales'] + df['Cantidad de cacao SECO entregado en quintales'] * 45.36)
+        ).round(0),  # redondeo
         'Number Of Sacks*': '',  # Este campo queda vacío
         'Receipt Number*': df['Numero de comprobante de pago'],
         'Loading Official Delivery Number*': official_delivery_number
